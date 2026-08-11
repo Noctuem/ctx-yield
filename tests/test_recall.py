@@ -9,6 +9,7 @@ from __future__ import annotations
 
 import json
 import os
+import sys
 import time
 from pathlib import Path
 
@@ -94,8 +95,14 @@ def _make_session_dir(tmp_path: Path, project_root: Path) -> tuple[Path, Path]:
 def test_munge_matches_known_real_shape():
     # Verified against a real Claude Code installation (see module
     # docstring): separators/colon -> "-", drive letter lowercased.
-    munged = _munge_project_path("C:/Users/x/Projects/ctx-yield")
-    assert munged == "c--Users-x-Projects-ctx-yield"
+    # _munge_project_path resolves its input, so only platform-native
+    # absolute paths munge portably — assert the shape for this OS.
+    if sys.platform == "win32":
+        munged = _munge_project_path("C:/Users/x/Projects/ctx-yield")
+        assert munged == "c--Users-x-Projects-ctx-yield"
+    else:
+        munged = _munge_project_path("/home/x/Projects/ctx-yield")
+        assert munged == "-home-x-Projects-ctx-yield"
 
 
 def test_no_projects_dir_or_project_root_marks_everything_never_recalled(tmp_path):
